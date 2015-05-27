@@ -31,6 +31,7 @@ Temporary Items
 */install/
 */pkg/
 */src/
+*/repos/
 
 */.*.build
 */.*.configure
