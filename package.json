@@ -1,0 +1,17 @@
+{
+  "name"   : "erlang-framework",
+  "version": "0.0.1",
+  "homepage"  : "https://github.com/greymouser/erlang-bin-pkgs",
+
+  "author" : {
+    "name" : "Armando Di Cianno",
+    "email": "armando attay-at-at dicianno dotty-dot-dot org",
+    "url"  : "https://github.com/greymouser/erlang-bin-pkgs"
+  },
+
+  "devDependencies": {
+    "semver": "4.3.4"
+  },
+
+  "private": true
+}
