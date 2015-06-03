@@ -44,3 +44,9 @@ Temporary Items
 */.*.unpack
 
 node_modules
+devtools
+dist
+install
+sources
+work
+
