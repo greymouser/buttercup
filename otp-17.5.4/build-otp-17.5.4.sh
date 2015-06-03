@@ -61,6 +61,9 @@ SDK_PLATFORM_PATH=$($XCRUN_CMD --show-sdk-platform-path)
 SDK_PLATFORM_VERSION=$($XCRUN_CMD --show-sdk-platform-version)
 #PATH="$SDK_PATH/usr/bin:$PATH"             # various sdk lib tools
 
+SDKROOT="$SDK_PATH"
+ADDITIONAL_SDKS="/"
+
 #-------------------------------------------------------------------------------
 # # * `CPP' - C pre-processor.
 # CPP="$(xc_find clang)" # cpp, too(?)
@@ -72,17 +75,29 @@ YACC="$(xc_find bison) -y"
 
 #--sysroot=$SDK_PATH                            \
 #-isysroot $SDK_PATH                            \
+#--target=$clang_target_type                    \
 
-CLANG_FLAGS="                                     \
---target=$clang_target_type                       \
--arch $arch                                       \
--march=$march                                     \
--mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET    \
--isystem "$SDK_PATH/usr/include"                  \
--isystem /usr/include                             \
--iframework "$SDK_PATH/System/Library/Frameworks" \
--iframework /System/Library/Frameworks            \
+CLANG_FLAGS="                                  \
+--target=$clang_target_type                    \
+-arch $arch                                    \
+-march=$march                                  \
+-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+-isysroot "$SDK_PATH"                          \
+-isystem /usr/include                          \
 "
+#-I/usr/include                                 \
+
+
+# CLANG_FLAGS="                                  \
+# --target=$clang_target_type                    \
+# -arch $arch                                    \
+# -march=$march                                  \
+# -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+# -I /usr/include                                \
+# "
+# -isysroot "$SDK_PATH"                          \
+# -isystem /usr/include                          \
+# -iframework /System/Library/Frameworks         \
 
 # CLANG_MACHINE_FLAGS="                          \
 # -march=$march                                  \
@@ -104,29 +119,13 @@ CXXFLAGS="$CFLAGS"
 # * `LD' - Linker.
 LD="$(xc_find clang)"
 
-# LDFLAGS		= -Wl,-v -mmacosx-version-min=10.10 --target=x86_64-apple-macosx10.10 -arch x86_64 -bundle -flat_namespace -undefined warning -fPIC -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk/usr/lib -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk/System/Library/Frameworks -L/usr/lib
-LDFLAGS="$CLANG_FLAGS     \
--Wl,-L"$SDK_PATH/usr/lib" \
--Wl,-L/usr/lib            \
+LDFLAGS="-L/usr/lib \
+$CLANG_FLAGS        \
 "
 
-# -L/usr/lib                   \
-# $CLANG_MACHINE_FLAGS         \
-# "
-
-# LDFLAGS="$CLANG_FLAGS \
-# -L/usr/lib            \
-# "
-
-# LDFLAGS="                                          \
-# --target=$clang_target_type                        \
-# --sysroot $SDK_PATH                                \
-# -isysroot $SDK_PATH                                \
-# -arch $arch                                        \
-# -Wl,-march=$march                                  \
-# -Wl,-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
-# -Wl,-L,/usr/lib                                    \
-# "
+# -Wl,-F"$SDK_PATH/System/Library/Frameworks"       \
+# -Wl,-L"$SDK_PATH/usr/lib"                         \
+# -Wl,-L/usr/lib                                    \
 
 RANLIB="$(xc_find ranlib)"
 
@@ -137,7 +136,7 @@ AR="$(xc_find ar)"
 GETCONF="$(xc_find getconf)"
 
 #-------------------------------------------------------------------------------
-export MACOSX_DEPLOYMENT_TARGET
+export MACOSX_DEPLOYMENT_TARGET SDKROOT ADDITIONAL_SDKS
 export YACC CC CXX LD RANLIB AR GETCONF
 export CFLAGS CXXFLAGS LDFLAGS
 
@@ -271,7 +270,7 @@ function x_patch () {
 function x_configure () {
 
 #--with-dynamic-trace=dtrace   \
-  local configure_opts="
+  local configure_opts="      \
 --build=$triplet_build_type   \
 --host=$triplet_host_type     \
 --prefix=$prefix              \
@@ -286,6 +285,7 @@ function x_configure () {
 --with-javac                  \
 --with-ssl                    \
 --with-odbc                   \
+--with-wx-config=/usr/bin/wx-config \
 --disable-sctp                \
 "
 
@@ -312,7 +312,7 @@ function x_build () {
   if [[ ! -f "$stage_done_file" ]]; then
 
     pushd "$ERL_TOP"
-    xc_run make -j5 DESTDIR="$dest_dir" || error_report build
+    V=1 xc_run make -j5 DESTDIR="$dest_dir" || error_report build
     popd
 
     touch "$stage_done_file"
@@ -327,7 +327,7 @@ function x_install () {
     mkdir -p "$dest_dir/$sysconfdir"
 
     pushd "$build_dir/$src_designation-build"
-    make install DESTDIR="$dest_dir" || error_report install
+    V=1 xc_run make -j5 install DESTDIR="$dest_dir" || error_report install
     popd
 
     touch "$stage_done_file"
@@ -337,14 +337,6 @@ function x_install () {
 function x_test () {
   stage_done_file=".$src_designation.test"
   if [[ ! -f "$stage_done_file" ]]; then
-
-    pushd "$build_dir/$src_designation-build/samples"
-    make DESTDIR="$dest_dir" || error_report test
-    popd
-
-    pushd "$build_dir/$src_designation-build/demos"
-    make DESTDIR="$dest_dir" || error_report test
-    popd
 
     touch "$stage_done_file"
   fi
