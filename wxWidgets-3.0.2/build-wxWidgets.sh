@@ -61,6 +61,9 @@ SDK_PLATFORM_PATH=$($XCRUN_CMD --show-sdk-platform-path)
 SDK_PLATFORM_VERSION=$($XCRUN_CMD --show-sdk-platform-version)
 #PATH="$SDK_PATH/usr/bin:$PATH"             # various sdk lib tools
 
+SDKROOT="$SDK_PATH"
+ADDITIONAL_SDKS="/"
+
 #-------------------------------------------------------------------------------
 # # * `CPP' - C pre-processor.
 # CPP="$(xc_find clang)" # cpp, too(?)
@@ -70,19 +73,45 @@ SDK_PLATFORM_VERSION=$($XCRUN_CMD --show-sdk-platform-version)
 
 YACC="$(xc_find bison) -y"
 
+#--sysroot=$SDK_PATH                            \
+#-isysroot $SDK_PATH                            \
+#--target=$clang_target_type                    \
+
+CLANG_FLAGS="                                  \
+--target=$clang_target_type                    \
+-arch $arch                                    \
+-march=$march                                  \
+-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+-isysroot "$SDK_PATH"                          \
+"
+#-I/usr/include                                 \
+
+
+# CLANG_FLAGS="                                  \
+# --target=$clang_target_type                    \
+# -arch $arch                                    \
+# -march=$march                                  \
+# -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+# -I "$SDK_PATH/usr/lib"                         \
+# -F "$SDK_PATH/System/Library/Frameworks"       \
+# -I /usr/lib                                    \
+# -F /System/Library/Frameworks                  \
+# "
+
+# -isysroot "$SDK_PATH"                          \
+# -isystem /usr/include                          \
+# -iframework /System/Library/Frameworks         \
+
+# CLANG_MACHINE_FLAGS="                          \
+# -march=$march                                  \
+# -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+# "
+
 # * `CC' - C compiler.
 CC="$(xc_find clang)"
 
 # * `CFLAGS' - C compiler flags.
-CFLAGS="                                       \
---target=$clang_target_type                    \
---sysroot $SDK_PATH                            \
--isysroot $SDK_PATH                            \
--arch $arch                                    \
--march=$march                                  \
--mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
-"
-#CC="$CC $CFLAGS"
+CFLAGS="$CLANG_FLAGS"
 
 # * `CXX' - C++ compiler.
 CXX="$(xc_find clang++)"
@@ -93,14 +122,16 @@ CXXFLAGS="$CFLAGS"
 # * `LD' - Linker.
 LD="$(xc_find clang)"
 
-LDFLAGS="
---target=$clang_target_type                        \
---sysroot $SDK_PATH                                \
--isysroot $SDK_PATH                                \
--arch $arch                                        \
--Wl,-march=$march                                  \
--Wl,-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+LDFLAGS="-L/usr/lib \
+$CLANG_FLAGS        \
 "
+
+# LDFLAGS="$CLANG_FLAGS                             \
+# -Wl,-macosx_version_min,$MACOSX_DEPLOYMENT_TARGET \
+# -Wl,-F"$SDK_PATH/System/Library/Frameworks"       \
+# -Wl,-L"$SDK_PATH/usr/lib"                         \
+# -Wl,-L/usr/lib                                    \
+# "
 
 RANLIB="$(xc_find ranlib)"
 
@@ -111,7 +142,9 @@ AR="$(xc_find ar)"
 GETCONF="$(xc_find getconf)"
 
 #-------------------------------------------------------------------------------
-export MACOSX_DEPLOYMENT_TARGET YACC CC CFLAGS CXX CXXFLAGS LD RANLIB AR GETCONF
+export MACOSX_DEPLOYMENT_TARGET SDKROOT ADDITIONAL_SDKS
+export YACC CC CXX LD RANLIB AR GETCONF
+export CFLAGS CXXFLAGS LDFLAGS
 
 #-------------------------------------------------------------------------------
 function contains() { # array, element
@@ -230,12 +263,17 @@ function x_configure () {
 --disable-dependency-tracking \
 --with-osx                    \
 --with-cocoa                  \
---with-macosx-sdk="$SDK_PATH" \
---with-macosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
 --enable-unicode              \
 --enable-std_string           \
 --with-opengl                 \
+--without-libtiff             \
+--without-liblzma             \
+--with-macosx-sdk="$SDK_PATH" \
+--with-macosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
 "
+
+# --with-macosx-sdk="$SDK_PATH" \
+# --with-macosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
 
 # --enabled-shared              \
 # --disable-monolithic          \
@@ -296,7 +334,7 @@ function x_build () {
   if [[ ! -f "$stage_done_file" ]]; then
 
     pushd "$build_dir/$src_designation-build"
-    make DESTDIR="$dest_dir" || error_report build
+    V=1 make -j5 DESTDIR="$dest_dir" || error_report build
     popd
 
     touch "$stage_done_file"
@@ -311,7 +349,7 @@ function x_install () {
     mkdir -p "$dest_dir/$sysconfdir"
 
     pushd "$build_dir/$src_designation-build"
-    make install DESTDIR="$dest_dir" || error_report install
+    V=1 make install DESTDIR="$dest_dir" || error_report install
     popd
 
     touch "$stage_done_file"
@@ -322,13 +360,13 @@ function x_test () {
   stage_done_file=".$src_designation.test"
   if [[ ! -f "$stage_done_file" ]]; then
 
-    pushd "$build_dir/$src_designation-build/samples"
-    make DESTDIR="$dest_dir" || error_report test
-    popd
-
-    pushd "$build_dir/$src_designation-build/demos"
-    make DESTDIR="$dest_dir" || error_report test
-    popd
+    # pushd "$build_dir/$src_designation-build/samples"
+    # V=1 make DESTDIR="$dest_dir" || error_report test
+    # popd
+    #
+    # pushd "$build_dir/$src_designation-build/demos"
+    # V=1 make -j5 DESTDIR="$dest_dir" || error_report test
+    # popd
 
     touch "$stage_done_file"
   fi

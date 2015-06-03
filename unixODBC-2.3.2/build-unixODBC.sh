@@ -73,10 +73,6 @@ ADDITIONAL_SDKS="/"
 
 YACC="$(xc_find bison) -y"
 
-#--sysroot=$SDK_PATH                            \
-#-isysroot $SDK_PATH                            \
-#--target=$clang_target_type                    \
-
 CLANG_FLAGS="                                  \
 --target=$clang_target_type                    \
 -arch $arch                                    \
@@ -84,48 +80,18 @@ CLANG_FLAGS="                                  \
 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
 -isysroot "$SDK_PATH"                          \
 "
-#-I/usr/include                                 \
-
-#-Wl,-L/usr/lib                                 \
-
-# -isystem "$SDK_PATH/usr/include"               \
-# -iframework "$SDK_PATH/System/Library/Frameworks" \
-# -isystem /usr/include                          \
-# -iframework /System/Library/Frameworks         \
-
-# -isysroot "$SDK_PATH"                          \
-# -isystem /usr/include                          \
-# -iframework /System/Library/Frameworks         \
-
-# CLANG_MACHINE_FLAGS="                          \
-# -march=$march                                  \
-# -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
-# "
 
 # * `CC' - C compiler.
 CC="$(xc_find clang)"
-
-# * `CFLAGS' - C compiler flags.
 CFLAGS="$CLANG_FLAGS"
 
 # * `CXX' - C++ compiler.
 CXX="$(xc_find clang++)"
-
-# * `CXXFLAGS' - C++ compiler flags.
 CXXFLAGS="$CFLAGS"
 
 # * `LD' - Linker.
 LD="$(xc_find clang)"
-
-LDFLAGS="-L/usr/lib \
-$CLANG_FLAGS        \
-"
-
-# -Wl,-macosx_version_min,$MACOSX_DEPLOYMENT_TARGET \
-# "
-# -Wl,-F"$SDK_PATH/System/Library/Frameworks"       \
-# -Wl,-L"$SDK_PATH/usr/lib"                         \
-# -Wl,-L/usr/lib                                    \
+LDFLAGS="$CLANG_FLAGS"
 
 RANLIB="$(xc_find ranlib)"
 
@@ -236,6 +202,7 @@ function x_configure () {
 --host=$triplet_host_type     \
 --prefix=$prefix              \
 --sysconfdir=$sysconfdir      \
+--disable-dependency-tracking \
 --enable-gui=no               \
 "
 # --disable-debug               \
