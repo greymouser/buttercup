@@ -76,20 +76,32 @@ function bc_stage_run {
   local stage_target="bc_pkg_$stage"
   local stage_done_file="$BC_W_DIR/$BC_P.$stage"
 
-  if [[ ! -f "$stage_done_file" ]]; then
+  if [[ "$(type -t $stage_target)" == "function" ]]; then
 
-    if [[ "$(type -t $stage_target)" == "function" ]]; then
+    if [[ ! -f "$stage_done_file" ]]; then
       $stage_target
-    elif [[ "default" == "${!stage_target}" ]]; then
+      bc_local_run touch $stage_done_file
+    fi
+  elif [[ "skip" == "${!stage_target}" ]]; then
+
+    return
+
+  elif [[ "default" == "${!stage_target}" ]]; then
+
+    if [[ ! -f "$stage_done_file" ]]; then
       bc_stages_${stage}_default
-    elif [[ "devtools" == "${!stage_target}" ]]; then
-      bc_stages_${stage}_devtools
+      bc_local_run touch $stage_done_file
     fi
 
-    cmd="bc_local_run touch $stage_done_file"
-    #echo $cmd
-    $cmd
+  elif [[ "devtools" == "${!stage_target}" ]]; then
+
+    if [[ ! -f "$stage_done_file" ]]; then
+      bc_stages_${stage}_devtools
+      bc_local_run touch $stage_done_file
+    fi
+
   fi
+
 }
 
 function bc_stages_run {

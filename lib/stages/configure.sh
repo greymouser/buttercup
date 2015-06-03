@@ -56,7 +56,7 @@
 
 #-------------------------------------------------------------------------------
 
-function bc_stages_configure_default {
+function bc_stages_configure_env {
 
   BC_PKG_CONFIGURE_PREFIX="$BC_PKG_FRAMEWORK_PREFIX"
   BC_PKG_CONFIGURE_EPREFIX="$BC_PKG_FRAMEWORK_PREFIX"
@@ -97,6 +97,11 @@ function bc_stages_configure_default {
 --disable-dependency-tracking
 $BC_PKG_CONFIGURE_EXTRA_OPTS
 "
+}
+
+function bc_stages_configure_default {
+
+  bc_stages_configure_env
 
   bc_pushd "$BC_PKG_BUILD_DIR"
 
