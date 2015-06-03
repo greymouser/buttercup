@@ -1,0 +1,28 @@
+
+BC_PKG_PN="${BC_PN/odbc/ODBC}"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="http://www.$BC_PN.org/"
+
+BC_PKG_ORGANIZATION="org.unixodbc"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_SOURCES="
+  ftp://ftp.unixodbc.org/pub/$BC_PKG_PN/$BC_PKG_P.tar.gz
+"
+BC_PKG_CONFIGURE_EXTRA_OPTS="
+--enable-gui=no
+--enable-drivers
+--enable-driver-conf
+"
+
+BC_PKG_FRAMEWORK_VERSION="${BC_PV:0: -2}"
+BC_PKG_FRAMEWORK_GENERATE_LIB_LDFLAGS="-lodbc"
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+bc_pkg_configure=default
+bc_pkg_build=default
+bc_pkg_install=default
+bc_pkg_framework=default
+bc_pkg_pkgbuild=default

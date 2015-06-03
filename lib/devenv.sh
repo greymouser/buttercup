@@ -1,11 +1,14 @@
 
 function bc_devenv_install {
 
-  pushd ${BC_TOP_DIR}
+  bc_pushd ${BC_TOP_DIR}
 
-  mkdir -p "$BC_DEVTOOLS_DIR"
-  bc_local_run npm install
+    mkdir -p "$BC_DEVTOOLS_DIR"
 
-  popd
+    bc_local_run npm install
+
+    bc_stages_run autoconf 2.59
+
+  bc_popd
 
 }

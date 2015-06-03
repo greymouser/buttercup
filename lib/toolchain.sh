@@ -34,7 +34,7 @@ OS="$OS_NAME$OS_VERSION"
 GCC_TRIPLET_BUILD_TYPE="$ARCH-$VENDOR-$OS"
 GCC_TRIPLET_HOST_TYPE="$GCC_TRIPLET_BUILD_TYPE"
 
-CLANG_TARGET_TYPE="$ARCH-$VENDOR-$SDK"
+CLANG_TARGET_TYPE="$ARCH-$VENDOR-$DEPLOY_SDK"
 
 
 #-------------------------------------------------------------------------------
@@ -81,6 +81,9 @@ ADDITIONAL_SDKS=""
 #-------------------------------------------------------------------------------
 # Common build tools and associated env vars
 
+MAKE="$(bc_xc_find make)"
+MAKE_OPTS="-j5"
+
 CC="$(bc_xc_find clang)"
 CXX="$(bc_xc_find clang++)"
 LD="$(bc_xc_find clang)"
@@ -95,7 +98,7 @@ CFLAGS="$CLANG_FLAGS                           \
 -march=$MARCH                                  \
 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
 -isysroot "$SDK_PATH"                          \
--isystem "$BC_INSTALL_DIR/usr/include"         \
+-isystem "$BC_INSTALL_DIR/include"             \
 -iframework "$BC_INSTALL_DIR/Frameworks"       \
 -iframework "$BC_INSTALL_DIR"                  \
 "
@@ -103,13 +106,13 @@ CXXFLAGS="$CFLAGS"
 
 CLANG_AS_LD_LDFLAGS="$CLANG_FLAGS                 \
 -Wl,-macosx_version_min,$MACOSX_DEPLOYMENT_TARGET \
--Wl,-L,"$BC_INSTALL_DIR/usr/lib"                  \
+-Wl,-L,"$BC_INSTALL_DIR/lib"                      \
 -Wl,-F,"$BC_INSTALL_DIR/Frameworks"               \
 -Wl,-F,"$BC_INSTALL_DIR"                          \
 "
 LD_AS_LD_LDFLAGS="$CLANG_FLAGS                \
 -macosx_version_min $MACOSX_DEPLOYMENT_TARGET \
--L "$BC_INSTALL_DIR/usr/lib"                  \
+-L "$BC_INSTALL_DIR/lib"                      \
 -F "$BC_INSTALL_DIR/Frameworks"               \
 -F "$BC_INSTALL_DIR"                          \
 "
@@ -124,6 +127,6 @@ GETCONF="$(bc_xc_find getconf)"
 
 #-------------------------------------------------------------------------------
 export MACOSX_DEPLOYMENT_TARGET SDKROOT ADDITIONAL_SDKS
-export CC CXX LD
-export CFLAGS CXXFLAGS LDFLAGS
+export MAKE CC CXX LD
+export MAKE_OPTS CFLAGS CXXFLAGS LDFLAGS
 export YACC RANLIB AR GETCONF

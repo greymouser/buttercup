@@ -1,0 +1,38 @@
+BC_PKG_PN="${BC_PN}"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="http://www.gnu.org/software/$BC_PKG_PN/$BC_PKG_PN.html"
+
+BC_PKG_ORGANIZATION="org.gnu"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_SOURCES="
+  http://ftp.gnu.org/gnu/$BC_PKG_PN/$BC_PKG_P.tar.bz2
+"
+BC_PKG_CONFIGURE_EXTRA_OPTS=""
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+
+function bc_pkg_configure {
+
+  BC_PKG_CONFIGURE_PREFIX="$BC_DEVTOOLS_DIR"
+
+  BC_PKG_CONFIGURE_OPTS="
+--build=$GCC_TRIPLET_BUILD_TYPE
+--host=$GCC_TRIPLET_HOST_TYPE
+--prefix=$BC_PKG_CONFIGURE_PREFIX
+--disable-dependency-tracking
+"
+  bc_pushd "$BC_PKG_BUILD_DIR"
+
+  $BC_PKG_CONFIGURE_SCRIPT \
+    $BC_PKG_CONFIGURE_OPTS \
+    DESTDIR="$BC_I_DIR"    \
+    || bc_error configure
+
+  bc_popd
+
+}
+bc_pkg_build=default
+bc_pkg_install=devtools

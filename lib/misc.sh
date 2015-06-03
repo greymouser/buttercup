@@ -1,4 +1,11 @@
 
+function bc_pushd {
+  pushd "$1" > /dev/null
+}
+
+function bc_popd {
+  popd > /dev/null
+}
 
 function bc_array_contains {
   # element, array
@@ -26,5 +33,6 @@ function bc_error_report {
 
 function bc_error {
     echo "$1"
-    [[ -z "$2" ]] && exit 1
+    # [[ -z "$2" ]] && exit 1
+    exit 1
 }

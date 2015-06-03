@@ -1,0 +1,41 @@
+
+BC_PKG_PN="${BC_PN/wxw/wxW}"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="http://www.$BC_PN.org/"
+
+BC_PKG_ORGANIZATION="org.wxwidgets"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_PATCHES="
+  https://gist.githubusercontent.com/greymouser/9eadc0fdea64b906c41e/raw/c3406a992640ea69cbd2d0f4e09d3ad697f7c750/${BC_PKG_P}_macosx10.10_build.patch
+"
+BC_PKG_SOURCES="
+  https://sourceforge.net/projects/wxwindows/files/$BC_PKG_PV/$BC_PKG_P.tar.bz2
+"
+
+BC_PKG_BUILD_DIR="$BC_W_DIR/$BC_PKG_P-build"
+
+BC_PKG_CONFIGURE_EXTRA_OPTS="
+--with-osx
+--with-cocoa
+--enable-unicode
+--enable-std_string
+--with-opengl
+--without-libtiff
+--without-liblzma
+--with-macosx-sdk="$SDKROOT"
+--with-macosx-version-min=$MACOSX_DEPLOYMENT_TARGET
+"
+
+BC_PKG_FRAMEWORK_VERSION="${BC_PV:0: -2}"
+BC_PKG_FRAMEWORK_GENERATE_LIB_LDFLAGS=$($BC_I_DIR/$(readlink -n $BC_I_DIR/usr/local/bin/wx-config) --libs all)
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+bc_pkg_patch=default
+bc_pkg_configure=default
+bc_pkg_build=default
+bc_pkg_install=default
+bc_pkg_framework=default
+bc_pkg_pkgbuild=default

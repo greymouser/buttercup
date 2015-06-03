@@ -8,6 +8,10 @@ function bc_package_init {
   local pv=""
   local pversions=""
   local max="0.0.0"
+  local test_pv=""
+  local major=""
+  local minor=""
+  local patch=""
 
   for file in $(ls -1 "$BC_PACKAGES_DIR"/$pn/$pn*); do
     file=$(basename $file)
@@ -19,7 +23,14 @@ function bc_package_init {
       pversions="$pversions $pv"
     fi
 
-    if bc_local_run semver --range ">$max" "$pv" >/dev/null; then
+    test_pv=$pv
+    major=$(echo $pv | cut -d'.' -f1)
+    minor=$(echo $pv | cut -d'.' -f2)
+    [[ -z "$minor" ]] && test_pv+=".0"
+    patch=$(echo $pv | cut -d'.' -f3)
+    [[ -z "$patch" ]] && test_pv+=".0"
+
+    if bc_local_run semver --range ">$max" "$test_pv" >/dev/null; then
       max=$pv
     fi
   done
@@ -40,13 +51,13 @@ function bc_package_init {
 
 function bc_packages_init {
 
-  pushd "$BC_TOP_DIR"
+  bc_pushd "$BC_TOP_DIR"
 
   for package in $(ls -1 "$BC_PACKAGES_DIR"); do
     bc_package_init $package
   done
 
-  popd
+  bc_popd
 
 }
 
@@ -67,6 +78,14 @@ function bc_package_list {
 
   echo $output
 
+}
+
+function bc_package_select_max_version {
+  
+  local pn=$1
+  local pn_max=${BC_PACKAGES["$pn max"]}
+
+  echo $pn_max
 }
 
 function bc_packages_list {

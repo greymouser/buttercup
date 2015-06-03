@@ -1,0 +1,144 @@
+
+BC_PKG_PN="otp"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="http://www.$BC_PN.org/"
+
+BC_PKG_ORGANIZATION="org.erlang"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_FRAMEWORK_VERSION="${BC_PV:0: -2}"
+BC_PKG_SOURCES="
+  git|git@github.com:erlang/$BC_PKG_PN.git|${BC_PKG_PN/otp/OTP}-$BC_PKG_PV
+"
+#http://www.$BC_PN.org/download/${BC_PKG_PN}_doc_html_${BC_PKG_FRAMEWORK_VERSION}.tar.gz
+#http://www.$BC_PN.org/download/${BC_PKG_PN}_doc_man_${BC_PKG_FRAMEWORK_VERSION}.tar.gz
+
+export ERL_TOP=$BC_W_DIR/$BC_PKG_P
+
+BC_PKG_CONFIGURE_EXTRA_OPTS="
+--disable-silent-rules
+--enable-threads
+--enable-smp-support
+--enable-kernel-poll
+--disable-hipe
+--enable-darwin-64-bit
+--enable-m64-build
+--with-javac
+--with-ssl
+--with-odbc
+--with-wx-config=/usr/local/bin/wx-config
+--disable-sctp
+"
+LDFLAGS+=" -L /Library/Frameworks/unixODBC.framework/Versions/Current/Libraries"
+CFLAGS+=" -I /Library/Frameworks/unixODBC.framework/Versions/Current/Headers"
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+
+function bc_pkg_configure {
+
+  BC_PKG_CONFIGURE_PREFIX="$BC_PKG_FRAMEWORK_PREFIX"
+
+  BC_PKG_CONFIGURE_OPTS="
+--build=$GCC_TRIPLET_BUILD_TYPE
+--host=$GCC_TRIPLET_HOST_TYPE
+--prefix=$BC_PKG_CONFIGURE_PREFIX
+--disable-dependency-tracking
+$BC_PKG_CONFIGURE_EXTRA_OPTS
+"
+
+  bc_pushd "$BC_PKG_SOURCE_DIR"
+    if [[ ! -f configure ]]; then
+      ./otp_build autoconf || bc_error patch
+    fi
+  bc_popd
+
+  bc_pushd "$BC_PKG_BUILD_DIR"
+    $BC_PKG_CONFIGURE_SCRIPT \
+      $BC_PKG_CONFIGURE_OPTS \
+      DESTDIR="$BC_I_DIR"    \
+      || bc_error configure
+  bc_popd
+
+}
+
+bc_pkg_build=default
+bc_pkg_install=default
+
+function bc_pkg_framework {
+
+  bc_pushd "$PWD/$BC_PKG_FRAMEWORK_DIR"
+
+    bc_pushd Versions
+      bc_pushd "$BC_PKG_FRAMEWORK_VERSION"
+        bc_local_run ln -shFf lib/erlang/usr/lib Libraries
+        bc_local_run ln -shFf lib/erlang/usr/include Headers
+
+        bc_pushd lib/erlang/usr/lib
+          bc_xc_run libtool                              \
+            -static                                      \
+            -no_warning_for_no_symbols                   \
+            libei.a liberl_interface.a liberts.a libic.a \
+            -o ../../../../$BC_PKG_PN                    \
+            || bc_error libtool
+        bc_popd
+
+        bc_local_run mkdir -p Resources
+      bc_popd
+
+      bc_local_run ln -shFf "$BC_PKG_FRAMEWORK_VERSION" Current
+    bc_popd
+
+    bc_local_run ln -shFf "Versions/$BC_PKG_FRAMEWORK_VERSION/$BC_PKG_PN" $BC_PKG_PN
+
+    for dir in Libraries Headers Resources; do
+      bc_local_run ln -shFf "Versions/Current/$dir" $dir
+    done
+
+    bc_local_run ln -shFf Versions/Current/$BC_PKG_PN $BC_PKG_PN
+
+    cat <<INFO_PLIST > "Resources/Info.plist"
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>English</string>
+  <key>CFBundleExecutable</key>
+  <string>$BC_PKG_PN</string>
+  <key>CFBundleName</key>
+  <string>$BC_PKG_PN</string>
+  <key>CFBundleGetInfoString</key>
+  <string>$BC_PKG_HOMEPAGE</string>
+  <key>CFBundleIconFile</key>
+  <string></string>
+  <key>CFBundleIdentifier</key>
+  <string>$BC_PKG_IDENTIFIER</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>$BC_PKG_PN-$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>NSPrincipalClass</key>
+  <string></string>
+</dict>
+</plist>
+INFO_PLIST
+
+  bc_popd
+
+  bc_local_run mkdir -p ./usr/local/bin
+  bc_pushd usr/local/bin
+    for file in $(ls ../../../Library/Frameworks/$BC_PKG_PN.framework/Versions/Current/bin/*); do
+      bc_local_run ln -shFf $file
+    done
+  bc_popd
+
+}
+
+bc_pkg_pkgbuild=default
