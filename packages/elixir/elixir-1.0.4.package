@@ -1,0 +1,127 @@
+
+BC_PKG_PN="$BC_PN"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="http://www.$BC_PN-lang.org/"
+
+BC_PKG_ORGANIZATION="org.$BC_PN-lang"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_FRAMEWORK_VERSION="${BC_PV:0: -2}"
+BC_PKG_SOURCES="
+  git|git@github.com:$BC_PN-lang/$BC_PN.git|v$BC_PKG_PV
+"
+
+BC_PKG_CONFIGURE_EXTRA_OPTS="
+"
+
+function elixir_build_env {
+
+  if [[ ! $(which erl) ]]; then
+    PATH="/Library/Frameworks/otp.framework/Versions/Current/bin":$PATH
+    export PATH
+  fi
+}
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+bc_pkg_configure=skip
+
+function bc_pkg_build {
+
+  elixir_build_env
+
+  bc_pushd "$BC_PKG_BUILD_DIR"
+    bc_xc_run $MAKE -j1                 \
+      PREFIX="$BC_PKG_FRAMEWORK_PREFIX" \
+      DESTDIR="$BC_I_DIR"               \
+      || bc_error build
+  bc_popd
+
+}
+
+function bc_pkg_install {
+
+  elixir_build_env
+
+  bc_pushd "$BC_PKG_BUILD_DIR"
+    bc_xc_run $MAKE -j1                 \
+      install                           \
+      PREFIX="$BC_PKG_FRAMEWORK_PREFIX" \
+      DESTDIR="$BC_I_DIR"               \
+      || bc_error build
+  bc_popd
+
+}
+
+function bc_pkg_framework {
+
+  elixir_build_env
+
+  bc_pushd "$PWD/$BC_PKG_FRAMEWORK_DIR"
+
+    bc_pushd Versions
+      bc_pushd "$BC_PKG_FRAMEWORK_VERSION"
+        bc_local_run ln -shFf lib/elixir/lib Libraries
+
+        bc_local_run ln -shFf /Library/Frameworks/otp.framework/otp $BC_PKG_PN
+        bc_local_run ln -shFf /Library/Frameworks/otp.framework/Headers Headers
+
+        bc_local_run mkdir -p Resources
+      bc_popd
+
+      bc_local_run ln -shFf "$BC_PKG_FRAMEWORK_VERSION" Current
+    bc_popd
+
+    bc_local_run ln -shFf "Versions/$BC_PKG_FRAMEWORK_VERSION/$BC_PKG_PN" $BC_PKG_PN
+
+    for dir in Libraries Headers Resources; do
+      bc_local_run ln -shFf "Versions/Current/$dir" $dir
+    done
+
+    bc_local_run ln -shFf Versions/Current/$BC_PKG_PN $BC_PKG_PN
+
+    cat <<INFO_PLIST > "Resources/Info.plist"
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>English</string>
+  <key>CFBundleExecutable</key>
+  <string>$BC_PKG_PN</string>
+  <key>CFBundleName</key>
+  <string>$BC_PKG_PN</string>
+  <key>CFBundleGetInfoString</key>
+  <string>$BC_PKG_HOMEPAGE</string>
+  <key>CFBundleIconFile</key>
+  <string></string>
+  <key>CFBundleIdentifier</key>
+  <string>$BC_PKG_IDENTIFIER</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>$BC_PKG_PN-$BC_PKG_FRAMEWORK_VERSION</string>
+  <key>NSPrincipalClass</key>
+  <string></string>
+</dict>
+</plist>
+INFO_PLIST
+
+  bc_popd
+
+  bc_local_run mkdir -p ./usr/local/bin
+  bc_pushd usr/local/bin
+    for file in $(ls ../../../Library/Frameworks/$BC_PKG_PN.framework/Versions/Current/bin/*); do
+      bc_local_run ln -shFf $file
+    done
+  bc_popd
+
+}
+
+bc_pkg_pkgbuild=default
