@@ -21,19 +21,21 @@ function bc_cli_process {
   done
   shift "$((OPTIND-1))"
 
-  bc_packages_init
   case "$command" in
     help)
-      bc_help
+      bc_help $0
       exit
       ;;
     list)
+      bc_packages_init
       bc_packages_list
       ;;
     setup)
+      bc_packages_init
       bc_devenv_install
       ;;
     build)
+      bc_packages_init
       package="$1"
       [[ ! -z "$2" ]] && package_version="$2"
       package_version=${package_version:=$(bc_package_select_max_version $package)}
