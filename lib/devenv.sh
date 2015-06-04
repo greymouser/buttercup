@@ -8,6 +8,7 @@ function bc_devenv_install {
     bc_local_run npm install
 
     bc_stages_run autoconf 2.59
+    bc_stages_run fop 2.0
 
   bc_popd
 
