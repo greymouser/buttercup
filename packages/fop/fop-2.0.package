@@ -1,0 +1,29 @@
+
+BC_PKG_PN="${BC_PN}"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE="https://xmlgraphics.apache.org/$BC_PKG_PN/"
+
+BC_PKG_ORGANIZATION="org.apache.xmlgraphics"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_SOURCES="
+  http://mirrors.ibiblio.org/apache/xmlgraphics/$BC_PKG_PN/binaries/$BC_PKG_P-bin.tar.gz
+"
+BC_PKG_CONFIGURE_EXTRA_OPTS=""
+
+bc_pkg_fetch=default
+bc_pkg_unpack=default
+
+function bc_pkg_install {
+
+  local to_dir=$BC_DEVTOOLS_DIR/libexec
+
+  mkdir -p $to_dir
+
+  tar cpf - $BC_PKG_P | tar xmpf - -C $to_dir
+
+  bc_pushd $BC_DEVTOOLS_DIR/bin
+    bc_local_run ln -shFf ../libexec/$BC_PKG_P/$BC_PKG_PN
+  bc_popd
+}
