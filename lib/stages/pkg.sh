@@ -20,7 +20,20 @@
 
 function bc_stages_pkgbuild_default {
 
-  find . > "$BC_D_DIR/$BC_PKG_P.manifest"
+#   cat <<UNINSTALL_SCRIPT > "$BC_PKG_FRAMEWORK_DIR/uninstall.sh"
+#   SCRIPT_FILE="\${BASH_SOURCE[0]}"
+#   cp /Library/Frameworks/$BC_PKG_FRAMEWORK_DIR/uninstall.sh /tmp/uninstall-
+# UNINSTALL_SCRIPT
+
+  local manifest="$BC_D_DIR/$BC_PKG_P.manifest"
+  bc_local_run find -d . > $manifest \
+    || bc_error manifest
+
+  bc_local_run sed                              \
+    -f $BC_LIB_DIR/stages/pkg.sed-manifest-cmds \
+    -i .bk                                      \
+    $manifest                                   \
+    || bc_error manifest_sed
 
   bc_pushd "$BC_D_DIR"
 
@@ -60,15 +73,18 @@ PKG_PLIST
 # productbuild_output="$src_designation.pkg"
 
 # function x_productbuild () {
+# function bc_stages_productbuild_default {
 #
-#   local dist_xml_file="distribution.xml"
+#   bc_pushd "$BC_D_DIR"
 #
-#   cat <<ENDOFFILE > "$pkg_dir/$dist_xml_file"
+#     local dist_xml_file="distribution.xml"
+#
+#     cat <<ENDOFFILE > "$dist_xml_file"
 # <?xml version="1.0" encoding="utf-8" standalone="no"?>
 # <installer-gui-script minSpecVersion="1">
 #
-#   <title>$src_name</title>
-#   <organization>$organization</organization>
+#   <title>$BC_PKG_PN</title>
+#   <organization>$BC_PKG_ORGANIZATION</organization>
 #   <domains enable_localSystem="true"/>
 #   <options customize="never" require-scripts="true" rootVolumeOnly="true" />
 #
@@ -80,39 +96,73 @@ PKG_PLIST
 #   -->
 #
 #   <!-- List all component packages -->
-#   <pkg-ref id="$identifier"
+#   <pkg-ref id="org.erlang.otp"
 #            version="0"
-#            auth="root">$pkgbuild_output</pkg-ref>
+#            auth="root">$BC_DIST_DIR/erlang/otp-17.5.6.pkg</pkg-ref>
+#
+#   <pkg-ref id="org.elixir-lang.elixir"
+#           version="0"
+#           auth="root">$BC_DIST_DIR/elixir/elixir-1.0.4.pkg</pkg-ref>
+#
+#   <pkg-ref id="org.unixodbc.unixODBC"
+#           version="0"
+#           auth="root">$BC_DIST_DIR/unixodbc/unixODBC-2.3.2.pkg</pkg-ref>
+#
+#   <pkg-ref id="org.wxwidgets.wxWidgets"
+#           version="0"
+#           auth="root">$BC_DIST_DIR/wxwidgets/wxWidgets-3.0.2.pkg</pkg-ref>
 #
 #   <!-- List them again here. They can now be organized as a hierarchy if you want. -->
 #   <choices-outline>
-#     <line choice="$identifier"/>
+#     <line choice="org.erlang.otp"/>
+#     <line choice="org.elixir-lang.elixir"/>
+#     <line choice="org.wxwidgets.wxWidgets"/>
+#     <line choice="org.unixodbc.unixODBC"/>
 #   </choices-outline>
 #
 #   <!-- Define each choice above -->
-#   <choice id="$identifier"
+#   <choice id="org.erlang.otp"
 #           visible="false"
-#           title="$src_name"
-#           description="$src_homepage"
+#           title="Erlang/OTP 17.5.6"
+#           description="http://www.erlang.org"
 #           start_selected="true">
-#     <pkg-ref id="$identifier"/>
+#     <pkg-ref id="org.erlang.otp"/>
+#   </choice>
+#
+#   <choice id="org.elixir-lang.elixir"
+#           visible="true"
+#           title="Elixir 1.0.4"
+#           description="http://www.elixir-lang.org"
+#           start_selected="true">
+#     <pkg-ref id="org.elixir-lang.elixir"/>
+#   </choice>
+#
+#   <choice id="org.wxwidgets.wxWidgets"
+#           visible="true"
+#           title="wxWidgets 3.0.2"
+#           description="http://www.wxwidgets.org"
+#           start_selected="true">
+#     <pkg-ref id="org.wxwidgets.wxWidgets"/>
+#   </choice>
+#
+#   <choice id="org.unixodbc.unixODBC"
+#           visible="true"
+#           title="unixODBC 2.3.2"
+#           description="http://www.unixodbc.org"
+#           start_selected="true">
+#     <pkg-ref id="org.unixodbc.unixODBC"/>
 #   </choice>
 #
 # </installer-gui-script>
 # ENDOFFILE
 #
-#   stage_done_file=".$src_designation.productbuild"
-#   if [[ ! -f "$stage_done_file" ]]; then
-#
-#     pushd "$pkg_dir"
-#     #--resources resources \
-#     $(xc_run --find productbuild)     \
+#     bc_xc_run productbuild            \
 #       --distribution "$dist_xml_file" \
 #       --package-path .                \
-#       --version $src_version          \
-#       "$pkg_dir/$productbuild_output" || error_report productbuild
-#     popd
+#       --version $BC_PKG_PV            \
+#       "$BC_PKG_P.pkg"                 \
+#       || bc_error productbuild
 #
-#     touch "$stage_done_file"
-#   fi
+#   bc_popd
+#
 # }

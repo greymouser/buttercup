@@ -192,5 +192,9 @@ function bc_stage_pkgbuild {
 }
 
 function bc_stage_productbuild {
-  echo bc_stage_productbuild
+  mkdir -p "$BC_D_DIR"
+
+  bc_pushd "$BC_D_DIR"
+    bc_stage_run productbuild
+  bc_popd
 }
