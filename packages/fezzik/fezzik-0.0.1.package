@@ -1,0 +1,121 @@
+
+BC_PKG_PN="${BC_PN/f/F}"
+BC_PKG_PV="$BC_PV"
+BC_PKG_P="$BC_PKG_PN-$BC_PKG_PV"
+BC_PKG_HOMEPAGE=""
+
+BC_PKG_ORGANIZATION="org.dicianno"
+BC_PKG_IDENTIFIER="$BC_PKG_ORGANIZATION.$BC_PKG_PN"
+
+BC_PKG_SOURCES="
+"
+BC_PKG_CONFIGURE_EXTRA_OPTS="
+"
+
+BC_PKG_FRAMEWORK_VERSION="${BC_PV:0: -2}"
+BC_PKG_FRAMEWORK_GENERATE_LIB_LDFLAGS="-lodbc"
+
+function bc_pkg_productbuild {
+
+  for pkg_file in erlang/otp-17.5.6.pkg         \
+                  elixir/elixir-1.0.4.pkg       \
+                  unixodbc/unixODBC-2.3.2.pkg   \
+                  wxwidgets/wxWidgets-3.0.2.pkg
+  do
+    bc_local_run ln -shFf $BC_DIST_DIR/$pkg_file
+  done
+
+  local dist_xml_file="distribution.xml"
+
+  cat <<ENDOFFILE > "$dist_xml_file"
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+
+  <title>$BC_PKG_PN</title>
+  <organization>$BC_PKG_ORGANIZATION</organization>
+
+  <allowed-os-versions>
+    <os-version min="10.9"/>
+  </allowed-os-versions>
+  <domains enable_localSystem="true"
+           enable_currentUserHome="false"
+           enable_anywhere="false"/>
+  <options customize="allow" require-scripts="true" rootVolumeOnly="true" />
+
+  <!-- Define documents displayed at various steps -->
+  <!--
+  <welcome    file="welcome.html"    mime-type="text/html" />
+  <license    file="license.html"    mime-type="text/html" />
+  <conclusion file="conclusion.html" mime-type="text/html" />
+  -->
+
+  <!-- List all component packages -->
+  <pkg-ref id="org.erlang.otp"
+           version="0"
+           auth="root">otp-17.5.6.pkg</pkg-ref>
+
+  <pkg-ref id="org.elixir-lang.elixir"
+          version="0"
+          auth="root">elixir-1.0.4.pkg</pkg-ref>
+
+  <pkg-ref id="org.unixodbc.unixODBC"
+          version="0"
+          auth="root">unixODBC-2.3.2.pkg</pkg-ref>
+
+  <pkg-ref id="org.wxwidgets.wxWidgets"
+          version="0"
+          auth="root">wxWidgets-3.0.2.pkg</pkg-ref>
+
+  <!-- List them again here. They can now be organized as a hierarchy if you want. -->
+  <choices-outline>
+    <line choice="org.erlang.otp"/>
+    <line choice="org.elixir-lang.elixir"/>
+    <line choice="org.wxwidgets.wxWidgets"/>
+    <line choice="org.unixodbc.unixODBC"/>
+  </choices-outline>
+
+  <!-- Define each choice above -->
+  <choice id="org.erlang.otp"
+          enabled="false"
+          visible="true"
+          title="Erlang/OTP 17.5.6"
+          description="http://www.erlang.org"
+          start_selected="true">
+    <pkg-ref id="org.erlang.otp"/>
+  </choice>
+
+  <choice id="org.elixir-lang.elixir"
+          visible="true"
+          title="Elixir 1.0.4"
+          description="http://www.elixir-lang.org"
+          start_selected="true">
+    <pkg-ref id="org.elixir-lang.elixir"/>
+  </choice>
+
+  <choice id="org.wxwidgets.wxWidgets"
+          visible="true"
+          title="wxWidgets 3.0.2"
+          description="http://www.wxwidgets.org"
+          start_selected="true">
+    <pkg-ref id="org.wxwidgets.wxWidgets"/>
+  </choice>
+
+  <choice id="org.unixodbc.unixODBC"
+          visible="true"
+          title="unixODBC 2.3.2"
+          description="http://www.unixodbc.org"
+          start_selected="true">
+    <pkg-ref id="org.unixodbc.unixODBC"/>
+  </choice>
+
+</installer-gui-script>
+ENDOFFILE
+
+  bc_xc_run productbuild            \
+    --distribution "$dist_xml_file" \
+    --package-path .                \
+    --version $BC_PKG_PV            \
+    "$BC_PKG_P.pkg"                 \
+    || bc_error productbuild
+
+}
